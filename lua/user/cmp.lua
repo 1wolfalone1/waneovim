@@ -45,6 +45,7 @@ local kind_icons = {
 }
 -- find more here: https://www.nerdfonts.com/cheat-sheet
 
+
 cmp.setup {
   snippet = {
     expand = function(args)
@@ -110,8 +111,10 @@ cmp.setup {
     end,
   },
   sources = {
+    { name = "copilot"},
     { name = "nvim_lsp" },
     { name = "luasnip" },
+    { name = "npm" },
     { name = "buffer" },
     { name = "path" },
   },

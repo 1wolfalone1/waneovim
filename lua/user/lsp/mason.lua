@@ -1,17 +1,17 @@
 local servers = {
 	"lua_ls",
-	-- "cssls",
+	"gopls",
 	-- "html",
-	-- "tsserver",
+	"tsserver",
 	"pyright",
-	-- "bashls",
+	"bashls",
 	"jsonls",
-	-- "yamlls",
+  "jdtls",
 }
 
 local settings = {
+  border = "true",
 	ui = {
-		border = "none",
 		icons = {
 			package_installed = "◍",
 			package_pending = "◍",
