@@ -107,7 +107,12 @@ return packer.startup(function(use)
 
 	-- Git
 	use { "lewis6991/gitsigns.nvim" }
-
+  use({
+     "wintermute-cell/gitignore.nvim",
+     requires = {
+        "nvim-telescope/telescope.nvim" -- optional: for multi-select
+     }
+  })
 	-- Automatically set up your configuration after cloning packer.nvim
 	-- Put this at the end after all plugins
 	if PACKER_BOOTSTRAP then
