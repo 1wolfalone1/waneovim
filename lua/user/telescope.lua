@@ -31,11 +31,11 @@ telescope.setup {
         ["<C-t>"] = actions.select_tab,
 
         ["<C-u>"] = actions.preview_scrolling_up,
-        ["<C-d>"] = actions.preview_scrolling_down,
+        -- ["<C-d>"] = actions.preview_scrolling_down,
 
         ["<PageUp>"] = actions.results_scrolling_up,
         ["<PageDown>"] = actions.results_scrolling_down,
-
+        ['<C-d>'] = require('telescope.actions').delete_buffer,
         ["<Tab>"] = actions.toggle_selection + actions.move_selection_worse,
         ["<S-Tab>"] = actions.toggle_selection + actions.move_selection_better,
         ["<C-q>"] = actions.send_to_qflist + actions.open_qflist,
@@ -88,6 +88,9 @@ telescope.setup {
     planets = {
       show_pluto = true,
     },
+    -- find_files = {
+    --   theme = "get_cursor",
+    -- }
   },
   extensions = {
     -- Your extension configuration goes here:

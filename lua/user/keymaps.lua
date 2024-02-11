@@ -19,6 +19,9 @@ vim.g.maplocalleader = " "
 --   command_mode = "c",
 keymap("n", "<leader>e", ":Lex 30<cr>", opts)
 -- Normal --
+
+-- Remove ^M --
+keymap("n", "<leader>m", [[:%s/\r$//g<CR>]], opts)
 -- Better window navigation
 keymap("n", "<C-h>", "<C-w>h", opts)
 keymap("n", "<C-j>", "<C-w>j", opts)
@@ -61,7 +64,7 @@ keymap("n", "<C-c>", "<Plug>(coc-cursors-position)", opts)
 keymap("n", "<C-d>", "<Plug>(coc-cursors-word)", opts)
 keymap("x", "<C-c>", "<Plug>(coc-cursors-range)", opts)
 keymap("n", "<leader>x", "<Plug>(coc-cursors-operator)", opts)
-
+ 
 -- Terminal --
 -- Better terminal navigation
 -- keymap("t", "<C-h>", "<C-\\><C-N><C-w>h", term_opts)

@@ -64,6 +64,10 @@ return packer.startup(function(use)
   use { "lunarvim/darkplus.nvim" }
   use { "xiyaowong/transparent.nvim" }
   use { "catppuccin/nvim", as = "catppuccin" }
+  use "romainl/Apprentice"
+  use { "ellisonleao/gruvbox.nvim" }
+  use 'navarasu/onedark.nvim'
+  use 'bluz71/vim-nightfly-colors'
 	-- Cmp 
   use { "hrsh7th/nvim-cmp" } -- The completion plugin
   use { "hrsh7th/cmp-buffer" } -- buffer completions
@@ -77,7 +81,7 @@ return packer.startup(function(use)
     'nvim-lua/plenary.nvim'
   }
   }
-  use {
+ use {
   "zbirenbaum/copilot.lua",
   cmd = "Copilot",
   event = "InsertEnter",
@@ -89,7 +93,6 @@ return packer.startup(function(use)
 	-- Snippets
   use { "L3MON4D3/LuaSnip" } --snippet engine
   use { "rafamadriz/friendly-snippets" } -- a bunch of snippets to use
-
 	-- LSP
 	use { "neovim/nvim-lspconfig" } -- enable LSP
   use { "williamboman/mason.nvim"} -- simple to use language server installer
@@ -102,9 +105,12 @@ return packer.startup(function(use)
 
 	-- Treesitter
 	use {
-		"nvim-treesitter/nvim-treesitter"
+		"nvim-treesitter/nvim-treesitter",
+    requires = {
+      "HiPhish/nvim-ts-rainbow2"
+    }
 	}
-
+  use "HiPhish/nvim-ts-rainbow2"
 	-- Git
 	use { "lewis6991/gitsigns.nvim" }
   use({
@@ -114,7 +120,52 @@ return packer.startup(function(use)
      }
   })
 	-- Automatically set up your configuration after cloning packer.nvim
+  use {
+    'rmagatti/auto-session',
+    config = function()
+      require("auto-session").setup {
+        log_level = "error",
+        auto_session_suppress_dirs = { "~/", "~/Projects", "~/Downloads", "/"},
+      }
+    end
+  }
+
+  -- use({
+  --   "Pocco81/auto-save.nvim",
+  --   config = function()
+  --      require("auto-save").setup {
+  --       -- your config goes here
+  --       -- or just leave it empty :)
+  --      }
+  --   end,
+  -- })
 	-- Put this at the end after all plugins
+  -- use { "ibhagwan/fzf-lua",
+  -- -- optional for icon support
+  -- requires = { "nvim-tree/nvim-web-devicons" }
+  -- }
+  -- use({
+  --    "gennaro-tedesco/nvim-possession",
+  --   require = {
+  --       "ibhagwan/fzf-lua",
+  --   },
+  --   config = function()
+  --       local possession = require("nvim-possession")
+  --       vim.keymap.set("n", "<leader>sl", function()
+  --           possession.list()
+  --       end)
+  --       vim.keymap.set("n", "<leader>sn", function()
+  --           possession.new()
+  --       end)
+  --       vim.keymap.set("n", "<leader>su", function()
+  --           possession.update()
+  --       end)
+  --       vim.keymap.set("n", "<leader>sd", function()
+  --           possession.delete()
+  --       end)
+  --   end,
+  -- })
+  use { "rcarriga/nvim-dap-ui", requires = {"mfussenegger/nvim-dap"} }
 	if PACKER_BOOTSTRAP then
 		require("packer").sync()
 	end
