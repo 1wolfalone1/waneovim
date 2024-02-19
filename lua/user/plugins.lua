@@ -99,32 +99,10 @@ return packer.startup(function(use)
   use { "williamboman/mason-lspconfig.nvim" }
 	use { "jose-elias-alvarez/null-ls.nvim" } -- for formatters and linters
   use { "RRethy/vim-illuminate" }
-
+  use { "mfussenegger/nvim-jdtls" }
+  
 	-- Telescope
 	use { "nvim-telescope/telescope.nvim" }
-  use {
-        'nvim-java/nvim-java',
-        requires = {
-            'nvim-java/lua-async-await',
-            'nvim-java/nvim-java-core',
-            'nvim-java/nvim-java-test',
-            'nvim-java/nvim-java-dap',
-            'MunifTanjim/nui.nvim',
-            'neovim/nvim-lspconfig',
-            'mfussenegger/nvim-dap',
-            {
-                'williamboman/mason.nvim',
-                config = function()
-                    require('mason').setup({
-                        registries = {
-                            'github:nvim-java/mason-registry',
-                            'github:mason-org/mason-registry',
-                        },
-                    })
-                end,
-            },
-        }
-  }
 	-- Treesitter
 	use {
 		"nvim-treesitter/nvim-treesitter",

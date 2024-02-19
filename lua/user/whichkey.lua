@@ -93,7 +93,7 @@ local mappings = {
     "<cmd>Telescope find_files<cr>",
     "Find files",
   },
-  ["F"] = { "<cmd>Telescope find_files no_ignore=false hidden=true", "Find files with hidden file" },
+  ["F"] = { "<cmd>Telescope find_files no_ignore=false hidden=true<cr>", "Find files with hidden file" },
   ["G"] = { "<cmd>Telescope live_grep theme=ivy<cr>", "Find Text" },
   ["P"] = { "<cmd>lua require('telescope').extensions.projects.projects()<cr>", "Projects" },
 

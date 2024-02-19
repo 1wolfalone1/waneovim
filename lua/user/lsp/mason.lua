@@ -6,7 +6,7 @@ local servers = {
 	"pyright",
 	"bashls",
 	"jsonls",
-  "jdtls",
+  -- "jdtls",
 }
 
 local settings = {
