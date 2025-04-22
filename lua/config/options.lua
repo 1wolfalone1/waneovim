@@ -21,3 +21,5 @@ vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv")
 vim.keymap.set("x", "<leader>p", '"_dP')
 vim.opt.colorcolumn = "94"
 vim.opt.linespace = 4
+-- git add current file
+vim.keymap.set("n", "<leader>ga", ":!git add %<CR>", { noremap = true, silent = true })

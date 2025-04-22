@@ -16,6 +16,9 @@ return {
       opts = {},
       version = not vim.g.lazyvim_blink_main and "*",
     },
+    {
+      "giuxtaposition/blink-cmp-copilot",
+    },
   },
   event = "InsertEnter",
 
@@ -64,7 +67,15 @@ return {
       -- adding any nvim-cmp sources here will enable them
       -- with blink.compat
       compat = {},
-      default = { "lsp", "path", "snippets", "buffer" },
+      default = { "lsp", "path", "snippets", "buffer", "copilot" },
+      providers = {
+        copilot = {
+          name = "copilot",
+          module = "blink-cmp-copilot",
+          score_offset = 100,
+          async = true,
+        },
+      },
     },
 
     cmdline = {
