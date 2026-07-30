@@ -32,8 +32,48 @@ echo
 
 # ---------------------------------------------------------------- 1. packages
 echo "==> [1/4] installing packages the AMD hardware will need"
-pacman -S --needed --noconfirm amd-ucode vulkan-radeon lib32-vulkan-radeon \
-                               efibootmgr gptfdisk
+
+# A stale sync database lists package versions the mirrors have already
+# deleted, so every download 404s. Catch that here and say so plainly,
+# instead of letting pacman emit a wall of mirror errors.
+newest_db=$(find /var/lib/pacman/sync -name '*.db' -printf '%T@\n' 2>/dev/null | sort -rn | head -1)
+if [[ -n $newest_db ]]; then
+  age_days=$(( ( $(date +%s) - ${newest_db%.*} ) / 86400 ))
+  echo "    pacman database last synced ${age_days} day(s) ago"
+  if (( age_days > 14 )); then
+    cat <<EOF
+
+    ------------------------------------------------------------------
+    STOP: the package database is ${age_days} days old.
+
+    It still lists versions the mirrors have deleted, so downloads will
+    fail with 404 errors. This is not a mirror problem.
+
+    Fix it first, in this order:
+
+        sudo pacman -Sy archlinux-keyring
+        sudo pacman -Syu
+
+    The keyring goes first, or signature checks on newer packages fail.
+    A kernel update is likely - REBOOT afterwards, then run this script
+    again.
+
+    Do NOT try 'pacman -Sy' plus installing these packages on its own.
+    That is a partial upgrade and is a known way to break Arch.
+    ------------------------------------------------------------------
+
+EOF
+    exit 1
+  fi
+fi
+
+if ! pacman -S --needed --noconfirm amd-ucode vulkan-radeon lib32-vulkan-radeon \
+                                    efibootmgr gptfdisk; then
+  echo
+  echo "    Package installation failed - nothing on this system was changed."
+  echo "    If the errors above are 404s, run 'sudo pacman -Syu' and retry."
+  exit 1
+fi
 echo "    installed. intel-ucode is kept too - they do not conflict."
 echo
 

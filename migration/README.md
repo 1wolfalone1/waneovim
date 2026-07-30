@@ -51,6 +51,33 @@ hardcoded disk numbers anywhere.
 
 ## Phase A — safe prep, on the OLD PC
 
+### Prerequisite: the system must be up to date
+
+Phase A installs packages, so the pacman sync database has to be current.
+A stale database still lists versions the mirrors have deleted, and every
+download fails with **404** — which looks like a mirror outage but is not.
+
+```bash
+sudo pacman -Sy archlinux-keyring
+sudo pacman -Syu
+```
+
+Reboot after that if the kernel was updated.
+
+The keyring goes first, or signature checks on newer packages fail. Never run
+`pacman -Sy` and then install packages on its own — that is a partial upgrade
+and a known way to break Arch.
+
+`04-prep-for-new-pc.sh` checks the database age and refuses to run if it is
+more than 14 days old, rather than letting pacman emit a wall of 404s.
+
+> Watch two things during a long-overdue upgrade on this machine:
+> `nvidia-open-dkms` has to rebuild against the new kernel (a DKMS failure
+> means a black screen on next boot — keep the live USB nearby), and the
+> `chaotic-aur` repo can lag behind core/extra and cause conflicts.
+
+### Running it
+
 Run while the old machine still works. **Nothing breaks.** It only adds what
 the new hardware needs.
 
