@@ -229,7 +229,7 @@ commented out — the file itself must stay, because HyDE's config `source`s it.
 | File | Purpose | Status |
 |---|---|---|
 | `README.md` | This guide | — |
-| `START-HERE.txt` | One page to photograph before starting. Also at the USB root | — |
+| `START-HERE.md` / `START-HERE.txt` | One page to photograph before starting. Also at the USB root | — |
 | `QUICK-REFERENCE.txt` | Plain-text crib sheet, readable from the live shell | — |
 | `RUN-ME.sh` | **Entry point in the new PC.** Guards, then hands to `05` | to run |
 | `01-copy-and-fstab.sh` | Copied `/home` onto the root disk, disabled its fstab mount | **done** |
@@ -267,7 +267,7 @@ bash /tmp/w/migration/05-uefi-convert.sh
 
 ### Before you start
 
-**Photograph `START-HERE.txt`** — you will be at a bare text prompt with no
+**Photograph `START-HERE.md`** (or the `.txt`, same content) — you will be at a bare text prompt with no
 browser and no way to read any of this until something is mounted.
 
 Every script here shares the same safety design: check assumptions before
