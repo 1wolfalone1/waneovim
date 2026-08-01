@@ -128,6 +128,31 @@ There is no installer UI. This is a plain root shell — that is expected.
 
 ### 3. Run the conversion
 
+The whole toolkit is copied onto the Ventoy stick's data partition, so it is
+reachable without mounting the Arch disk first:
+
+```bash
+mkdir -p /usb
+mount -L Ventoy /usb
+bash /usb/MIGRATION/RUN-ME.sh
+```
+
+`RUN-ME.sh` is a guard around `05-uefi-convert.sh`. It refuses to continue if:
+
+- `/` is `ext4` — you are in the installed system, not the live USB, and cannot
+  convert the disk you booted from
+- `/sys/firmware/efi` is absent — the stick was booted in legacy mode, so
+  `grub-install` could not register a UEFI entry
+- the CPU vendor is not `AuthenticAMD` — you are still in the *old* Intel
+  machine, where Phase B would destroy a working boot for nothing
+
+It then lists every disk, asks for confirmation, copies the conversion script
+to `/root` (exfat cannot set the exec bit, and the script should not be read
+off the USB while it runs) and `exec`s it.
+
+If exfat will not mount, `modprobe exfat` first. Failing that, the same scripts
+are on the Arch disk itself:
+
 ```bash
 mount /dev/disk/by-uuid/4776357f-67c6-4d1e-86aa-9ca39a1c6f85 /mnt
 cp /mnt/home/thiencn/home-migration/05-uefi-convert.sh /root/
@@ -161,6 +186,17 @@ inside do not move.
 Filesystem UUIDs live inside the filesystems, so they survive the MBR → GPT
 change. `/etc/fstab` needs no edits.
 
+### The second SSD is a free backup — leave it alone
+
+`01-copy-and-fstab.sh` *copied* `/home` to the system disk. It never erased the
+original. The second SSD (serial `2329BF403915`, UUID
+`34624526-36a5-4729-b266-350b5483acc1`) therefore still holds a complete 54 GB
+copy of `/home`, and its fstab entry is commented out rather than deleted.
+
+Do not wipe it or move it to another machine until the new PC is booting and
+verified. It costs nothing to keep and it is the only copy that is not on the
+disk being converted.
+
 ## If it does not boot
 
 **Goes straight to Windows** — not a failure. Press the boot menu key and pick
@@ -193,41 +229,49 @@ commented out — the file itself must stay, because HyDE's config `source`s it.
 | File | Purpose | Status |
 |---|---|---|
 | `README.md` | This guide | — |
+| `START-HERE.txt` | One page to photograph before starting. Also at the USB root | — |
 | `QUICK-REFERENCE.txt` | Plain-text crib sheet, readable from the live shell | — |
+| `RUN-ME.sh` | **Entry point in the new PC.** Guards, then hands to `05` | to run |
 | `01-copy-and-fstab.sh` | Copied `/home` onto the root disk, disabled its fstab mount | **done** |
 | `02-post-reboot-verify.sh` | Delta-synced anything that changed during that copy | **done** |
 | `03-check-boot-disk.sh` | Read-only: reports which disk holds the GRUB boot code | reusable |
-| `04-prep-for-new-pc.sh` | **Phase A** — safe prep on the old PC | to run |
+| `04-prep-for-new-pc.sh` | **Phase A** — safe prep on the old PC | **done** |
 | `05-uefi-convert.sh` | **Phase B** — BIOS→UEFI conversion from the live USB | to run |
 
 Scripts `01` and `02` are kept for the record — they consolidated `/home` off
 the second SSD onto the system disk, which is why this migration only has to
 move one drive. They are not part of the new-PC steps.
 
-### Running them
+### Where the scripts live
 
-A working copy also lives at `~/home-migration/` on the system disk, so from
-the Arch live session the scripts are reachable once root is mounted:
+Three copies, in order of convenience from the live session:
+
+| Location | Reachable when |
+|---|---|
+| `/usb/MIGRATION/` on the Ventoy stick | always — no disk mount needed |
+| `~/home-migration/` on the system disk | after mounting root at `/mnt` |
+| this repo | only if the live session has network |
 
 ```bash
+# from the USB (preferred)
+mkdir -p /usb && mount -L Ventoy /usb && bash /usb/MIGRATION/RUN-ME.sh
+
+# from the disk
 mount /dev/disk/by-uuid/4776357f-67c6-4d1e-86aa-9ca39a1c6f85 /mnt
 ls /mnt/home/thiencn/home-migration/
-```
 
-Or clone this repo in the live session if it has network:
-
-```bash
+# from this repo
 git clone https://github.com/1wolfalone1/waneovim.git /tmp/w
 bash /tmp/w/migration/05-uefi-convert.sh
 ```
 
 ### Before you start
 
-**Photograph the commands in step 3** — you will be at a bare text prompt with
-no browser and no way to read this file until root is mounted.
+**Photograph `START-HERE.txt`** — you will be at a bare text prompt with no
+browser and no way to read any of this until something is mounted.
 
-All five scripts share the same safety design: they check their assumptions
-before acting, ask before anything destructive, back up what they modify, and
-restore automatically on failure. `03` is read-only. `04` leaves the machine
+Every script here shares the same safety design: check assumptions before
+acting, ask before anything destructive, back up what is modified, restore
+automatically on failure. `03` is read-only. `04` leaves the machine
 bootable. Only `05` is irreversible, and only after it prints what it will do
 and you answer `y`.
