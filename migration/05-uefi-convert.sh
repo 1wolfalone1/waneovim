@@ -40,8 +40,9 @@ cleanup() {
    STOP - READ THIS BEFORE DOING ANYTHING ELSE
   ==================================================================
 
-   The partition table was already converted to GPT, but the run did
-   not finish. The disk cannot boot in legacy BIOS mode any more.
+   The partition table may already have been rewritten to GPT, so the
+   disk may no longer boot in legacy BIOS mode. The run did not finish
+   either way.
 
    NOTHING WAS DELETED. Every file is still there.
 
@@ -237,13 +238,23 @@ esp_fs=$(lsblk -no FSTYPE "$bootpart")
 [[ $esp_fs == vfat ]] || fail "/boot is $esp_fs, but an EFI System Partition must be FAT. Aborting."
 ok "/boot is $esp_fs (valid ESP filesystem)"
 
-umount -R /mnt
+umount -R /mnt || fail "could not unmount $rootpart after the pre-flight check.
+  Something is still using it. Nothing has been changed."
 ok "unmounted cleanly"
 
-# GPT keeps a backup header + partition table in the LAST 33 sectors of the
-# disk. If a partition runs into them, converting would corrupt its tail.
+# GPT keeps a backup header + partition table in the last 33 LOGICAL BLOCKS of
+# the disk. If a partition runs into them, converting corrupts its tail.
+#
+# The unit matters. Everything under /sys/class/block reports in 512-byte
+# sectors regardless of the drive's real block size, but GPT's 33 blocks are
+# LOGICAL blocks. On a 4Kn drive that is 33 * 4096 = 264 512-byte sectors, so a
+# hardcoded 33 would under-count the requirement eightfold. Derive it instead.
 diskname=$(basename "$disk")
 tot=$(cat "/sys/class/block/$diskname/size")
+lbs=$(cat "/sys/class/block/$diskname/queue/logical_block_size" 2>/dev/null || echo 512)
+[[ $lbs =~ ^[0-9]+$ ]] && (( lbs >= 512 )) || lbs=512
+need_sectors=$(( GPT_TAIL_SECTORS * lbs / 512 ))
+
 last_end=0
 for pdir in "/sys/class/block/$diskname/$diskname"*/; do
   [[ -f "$pdir/start" ]] || continue
@@ -251,11 +262,12 @@ for pdir in "/sys/class/block/$diskname/$diskname"*/; do
   if (( e > last_end )); then last_end=$e; fi
 done
 tail_free=$(( tot - 1 - last_end ))
-if (( tail_free < GPT_TAIL_SECTORS )); then
-  fail "only ${tail_free} free sectors at the end of the disk; GPT needs ${GPT_TAIL_SECTORS}.
+if (( tail_free < need_sectors )); then
+  fail "only ${tail_free} free sectors at the end of the disk; GPT needs
+  ${need_sectors} (${GPT_TAIL_SECTORS} logical blocks of ${lbs} bytes).
   Converting would overwrite the end of the last partition. Aborting."
 fi
-ok "${tail_free} free sectors at end of disk (GPT needs ${GPT_TAIL_SECTORS})"
+ok "${tail_free} free sectors at end of disk (need ${need_sectors}, block size ${lbs})"
 
 # Rewriting the partition table under a mounted filesystem risks the kernel
 # never re-reading it. The pre-flight umount above is checked by set -e, but

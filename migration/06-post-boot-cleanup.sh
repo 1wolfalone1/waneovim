@@ -133,9 +133,18 @@ echo "    backups in $BACKUP_DIR"
 if mkinitcpio -P; then
   ok "initramfs rebuilt"
 else
-  echo "    mkinitcpio reported errors. Restoring the images that got you here."
-  cp -a "$BACKUP_DIR"/initramfs-*.img /boot/ 2>/dev/null || true
-  echo "    restored - do not reboot until you know why it failed"
+  echo "    mkinitcpio reported errors."
+  # Only claim a restore if there is actually something to restore from. An
+  # unmatched glob would otherwise be passed to cp literally, fail silently
+  # into `|| true`, and still print "restored".
+  if compgen -G "$BACKUP_DIR/initramfs-*.img" >/dev/null; then
+    cp -a "$BACKUP_DIR"/initramfs-*.img /boot/
+    echo "    restored the images that got you here - do not reboot until you"
+    echo "    know why it failed"
+  else
+    echo "    NO BACKUP EXISTS to restore from. Do not reboot until you have"
+    echo "    checked /boot yourself."
+  fi
 fi
 
 # mkinitcpio installs the image even when a hook failed, so a size check is
@@ -147,8 +156,12 @@ for img in /boot/initramfs-linux.img /boot/initramfs-linux-lts.img; do
     printf '    %-38s %s  OK\n' "$img" "$(du -h "$img" | cut -f1)"
   else
     echo "    WARNING: $img is only $((sz/1024/1024))MB - suspiciously small."
-    echo "             Restoring from $BACKUP_DIR"
-    cp -a "$BACKUP_DIR/$(basename "$img")" /boot/ 2>/dev/null || true
+    if [[ -f "$BACKUP_DIR/$(basename "$img")" ]]; then
+      cp -a "$BACKUP_DIR/$(basename "$img")" /boot/
+      echo "             restored from $BACKUP_DIR ($(du -h "$img" | cut -f1))"
+    else
+      echo "             NO BACKUP to restore from - check /boot before rebooting."
+    fi
   fi
 done
 
