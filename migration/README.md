@@ -29,7 +29,11 @@ migration.
 - `/` and `/home` on one partition, `/boot` (1 GB FAT32) on the same disk
 - Legacy BIOS boot, MBR partition table, GRUB `i386-pc` in the MBR gap
 - NVIDIA RTX 3060, Intel CPU
-- Target: AMD Ryzen 7 7800X3D + Radeon RX 9070 XT + B650M
+- Target: AMD Ryzen 7 **9800X3D** (Zen 5) + Radeon RX 9070 XT +
+  **GIGABYTE X870M AORUS ELITE WIFI7** (order DH040844)
+- The new machine ships with its own 512GB NVMe (Hiksemi Wave), so two
+  similar drives will be present. Identification is by filesystem UUID and
+  serial throughout — never by size or by `nvme0`/`nvme1`.
 
 ## What has to change
 
@@ -97,6 +101,27 @@ back automatically.
 > `opengl-driver` and `vulkan-driver` for Hyprland — removing it before the AMD
 > replacements exist takes the compositor with it.
 
+## Verified against the final hardware
+
+The build changed after this toolkit was written (7800X3D/B650M → 9800X3D/X870M).
+Everything below was re-checked against the installed system rather than assumed:
+
+| Concern | Result |
+|---|---|
+| Zen 5 microcode | `microcode_amd_fam1ah.bin` present in `amd-ucode` 20260622 |
+| CPU vendor guard in `RUN-ME.sh` | 9800X3D is still `AuthenticAMD` — guard stays correct |
+| RDNA4 GPU (unchanged) | `gc_12_0_*` / `dcn_4_0_1` firmware inside both initramfs |
+| Kernels | 7.1.5 and 6.18.40-lts, both far past Zen 5 and RDNA4 support |
+| X870M WiFi 7 | `mt7925e` module + `WIFI_RAM_CODE_MT7925` firmware present |
+| X870M 2.5GbE | `r8169` present (also `igc`, `atlantic` as fallbacks) |
+| X870 mandatory USB4 | `thunderbolt` module present; not boot-critical |
+| Second NVMe in the machine | No script references a device name or size — identification is `blkid -U` plus serial, so a bundled Hiksemi drive is invisible to it |
+| New MSI FHD monitor | Old `monitor=desc:` rules simply will not match; `hyprland.conf` has a catch-all `monitor = ,preferred,auto,auto`, so no black screen. May come up at 60Hz — cosmetic |
+
+Nothing in the scripts needed changing for the new hardware. Only the
+instruction cards did: boot-menu key, BIOS vendor, memory-training time, and
+the presence of a second drive.
+
 ## Phase B — conversion, in the NEW PC
 
 This is the point of no return: afterwards the old machine can no longer boot.
@@ -120,25 +145,30 @@ This is the one item on the list that cannot be fixed afterwards from Linux.
 
 ### 1. Move the disk, then set up the BIOS
 
-Power off, remove the SSD with serial `2404EE402177`, install it in the new PC
-in the **M.2 slot nearest the CPU**. Plug in the Ventoy USB stick.
+Power off, remove the SSD with serial `2404EE402177`, install it in **any free
+M.2 slot** in the new PC — the bundled Hiksemi 512GB drive already occupies one
+of them. Plug in the Ventoy USB stick.
+
+Press **DEL** for the BIOS; **F12** is the boot menu on this Gigabyte board.
 
 | BIOS setting | Value | Why |
 |---|---|---|
-| Secure Boot | **Disabled** | GRUB is unsigned. Left on, the USB may refuse to boot — or everything works until the final reboot and then only Windows starts |
+| Secure Boot | **Disabled** | GRUB is unsigned. Left on, the USB may refuse to boot — or everything works until the final reboot and then only Windows starts. On Gigabyte it is under **Boot**; if it will not switch off, clear the Platform Key under **Key Management** first |
 | CSM / Legacy | **Disabled** | Forces the UEFI path the conversion targets |
-| Integrated Graphics | **Disabled** (or Auto) | The 7800X3D iGPU plus the dGPU gives Hyprland two cards and it can pick the one with no monitor attached |
+| Integrated Graphics | **Disabled** (or Auto) | The 9800X3D iGPU plus the dGPU gives Hyprland two cards and it can pick the one with no monitor attached |
 
 Two things that look like failures and are not:
 
-- **First power-on of a new AM5 board is 1–3 minutes of black screen** while
-  DDR5 memory training runs. Do not power off during it.
+- **First power-on is up to 5 minutes of black screen** while DDR5 memory
+  training runs, and the board may restart itself two or three times doing it.
+  Do not power off. Gigabyte's DRAM status LED staying lit past that means
+  reseat the RAM.
 - **The monitor must be plugged into the graphics card, not the motherboard.**
   The iGPU will happily show you a normal BIOS and then nothing afterwards.
 
 ### 2. Boot the live USB
 
-Power on → boot menu key (**F8 / F11 / F12**) → select the USB stick.
+Power on → **F12** for the boot menu → select the USB stick.
 
 > If two entries appear for the stick, pick the one prefixed **`UEFI:`**.
 > The script aborts if the live session booted in legacy mode, because

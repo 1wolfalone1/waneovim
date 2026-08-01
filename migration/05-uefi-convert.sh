@@ -126,7 +126,8 @@ if [[ -z $rootpart || -z $bootpart ]]; then
 
   If it is not in the list above:
     - power off, and check the M.2 screw is holding the drive down
-    - move it to the M.2 slot closest to the CPU socket (M.2_1)
+    - try a different M.2 slot (the machine's own Hiksemi 512GB
+      drive sits in one of them - that one is not yours)
     - check the BIOS storage page lists the drive at all
 
   Nothing has been changed. It is safe to power off now."
@@ -464,15 +465,16 @@ Shut down, REMOVE THE USB STICK, then power on:
 FIRST BOOT
 
   If it goes straight into Windows, that is NOT a failure. Press the
-  boot menu key (F8 / F11 / F12) and pick whichever entry is NOT
+  boot menu key - F12 on this Gigabyte board - and pick whichever is NOT
   "Windows Boot Manager". Depending on the board it is called:
 
       Arch          or      UEFI OS      or      WD Blue SN580
 
   Then set that one first in the BIOS boot order.
 
-  A black screen for the first 1-3 minutes on a brand new AM5 board is
-  normal - the memory is being trained. Do not power off during it.
+  A black screen for up to 5 minutes on a brand new board is normal - the
+  DDR5 is being trained, and it may restart itself two or three times
+  while it does. Do not power off during it.
 
   Make sure the monitor cable is in the GRAPHICS CARD, not the
   motherboard.

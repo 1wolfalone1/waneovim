@@ -116,7 +116,8 @@ if [[ -z $rootpart || -z $bootpart ]]; then
   If it is not in the list above:
     - power off completely
     - check the M.2 screw is holding the drive flat in its slot
-    - move it to the M.2 slot nearest the CPU socket (usually M.2_1)
+    - try a different M.2 slot (the new PC's own Hiksemi 512GB
+      drive occupies one of them - that one is not yours)
     - check the BIOS storage page can see the drive at all
 
   Nothing has been changed. It is safe to power off right now."
