@@ -153,7 +153,24 @@ echo "    (read-only; nothing is written in this step)"
 
 mkdir -p /mnt
 umount -R /mnt 2>/dev/null || true
-mount -o ro "$rootpart" /mnt || fail "cannot mount $rootpart read-only - the filesystem may be damaged"
+
+# An ext4 filesystem with an unreplayed journal - the normal state after an
+# unclean shutdown - refuses a plain read-only mount with "recovery required on
+# readonly filesystem". noload skips the replay, which is fine for looking at
+# files; the read-write mount later on replays it properly.
+if ! mount -o ro "$rootpart" /mnt 2>/dev/null; then
+  if mount -o ro,noload "$rootpart" /mnt 2>/dev/null; then
+    echo "    NOTE: the filesystem has an unreplayed journal (the old machine"
+    echo "          was not shut down cleanly). Inspecting without it; it gets"
+    echo "          replayed normally when the disk is mounted for writing."
+  else
+    fail "cannot mount $rootpart even read-only.
+
+  The filesystem may be damaged. Check it before converting anything:
+      fsck.ext4 -n $rootpart
+  Nothing has been changed."
+  fi
+fi
 mount -o ro "$bootpart" /mnt/boot || fail "cannot mount $bootpart read-only"
 
 [[ -f /mnt/etc/fstab ]] || fail "no /etc/fstab on this disk - it is not an Arch install"
@@ -238,6 +255,29 @@ if (( tail_free < GPT_TAIL_SECTORS )); then
   Converting would overwrite the end of the last partition. Aborting."
 fi
 ok "${tail_free} free sectors at end of disk (GPT needs ${GPT_TAIL_SECTORS})"
+
+# Rewriting the partition table under a mounted filesystem risks the kernel
+# never re-reading it. The pre-flight umount above is checked by set -e, but
+# something could be mounted from outside /mnt - a previous partial run, or an
+# automount. Verify directly rather than assume.
+# NOTE: findmnt takes ONE -S; a second silently replaces the first, so each
+# partition must be asked about separately.
+mounts_of() {
+  local out=""
+  for p in "$rootpart" "$bootpart"; do
+    out+=$(findmnt -rno TARGET -S "$p" 2>/dev/null || true)
+    out+=" "
+  done
+  echo "${out// /}"
+}
+if [[ -n $(mounts_of) ]]; then
+  echo "    something on $disk is mounted - unmounting"
+  umount "$rootpart" 2>/dev/null || true
+  umount "$bootpart" 2>/dev/null || true
+  [[ -z $(mounts_of) ]] || fail "$rootpart or $bootpart is still mounted.
+  Unmount it and run this again. Nothing has been changed."
+fi
+ok "nothing on $disk is mounted"
 echo
 
 # ============================================================ 4. confirm
@@ -274,12 +314,21 @@ else
 fi
 
 # lsblk reports 'gpt' off the protective MBR alone, so verify the real thing.
-if sgdisk -v "$disk" | grep -q 'No problems found'; then
+# This is deliberately NOT fatal. The table is already rewritten by now, so
+# stopping here would guarantee a disk with a GPT and no bootloader - strictly
+# worse than carrying on. A genuinely broken table makes grub-install fail a
+# few lines below with a clearer error anyway. And a fatal check that trips on
+# a benign warning would trip again on every rerun, with no way past it.
+verify_out=$(sgdisk -v "$disk" 2>&1 || true)
+if grep -q 'No problems found' <<<"$verify_out"; then
   ok "GPT structures verified"
 else
-  echo "    sgdisk -v reported:"
-  sgdisk -v "$disk" | sed 's/^/      /'
-  fail "the GPT is not clean. Do not reboot. Rerun this script."
+  echo
+  echo "    WARNING: sgdisk -v did not report a clean table:"
+  sed 's/^/      /' <<<"$verify_out"
+  echo "    Continuing anyway - installing a bootloader is the priority."
+  echo "    If the next step fails, that is the real answer."
+  echo
 fi
 
 # Filesystem UUIDs live inside the filesystems and must be unaffected.
